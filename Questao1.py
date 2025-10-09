@@ -1,5 +1,6 @@
 from PIL import Image
 import os
+import math
 
 class ManipularImage():
     """ 
@@ -19,7 +20,7 @@ class ManipularImage():
             img_redimensionada = self.aux.resize(nova_res, Image.LANCZOS)
             img_redimensionada.save(nome_saida + extensao)
             print("Imagem redimensionada para 720p com sucesso!")
-            # Transforma a imagem em .pmm
+            # Transforma a imagem em .ppm
             self.img = Image.open(nome_saida + extensao)
             self.img.save(nome_saida + ".ppm")
             print(f"Convertido '{nome_entrada}' → '{nome_saida}.ppm'")
@@ -55,7 +56,7 @@ class ManipularImage():
 
         nova_altura = len(nova_matriz)
         nova_largura = len(nova_matriz[0])
-        self.nome = self.nome_saida + "reduzida.pmm"
+        self.nome = self.nome_saida + "reduzida.ppm"
         with open(self.nome, "wb") as f:
             cabecalho = f"P6\n{nova_largura} {nova_altura}\n{max_valor}\n"
             f.write(cabecalho.encode())
@@ -94,6 +95,7 @@ class ManipularImage():
                 ]
                 nova_linha.append(novo_px)
             nova_linha.append(linha[-1])  
+            nova_linha.append(linha[-1])  
             matriz_largura.append(nova_linha)
 
         nova_largura = len(matriz_largura[0])
@@ -115,9 +117,10 @@ class ManipularImage():
                 nova_linha.append(novo_px)
             matriz_final.append(nova_linha)
         matriz_final.append(matriz_largura[-1]) 
+        matriz_final.append(matriz_largura[-1])
 
         nova_altura = len(matriz_final)
-        self.nome = self.nome_saida + "aumentado.pmm"
+        self.nome = self.nome_saida + "aumentado.ppm"
         with open(self.nome, "wb") as f:
             cabecalho = f"P6\n{nova_largura} {nova_altura}\n{max_valor}\n"
             f.write(cabecalho.encode())
@@ -129,11 +132,39 @@ class ManipularImage():
         print(f"Imagem aumentada salva como '{self.nome}' ({nova_largura}x{nova_altura})")
 
 
-    def calcular_erro(self):
-        pass
+    def calcular_erro(self, nome_original, nome_processada):
+        def ler_ppm(nome):
+            with open(nome, "rb") as f:
+                tipo = f.readline().strip()
+                while True:
+                    linha = f.readline()
+                    if not linha.startswith(b'#'):
+                        largura, altura = map(int, linha.split())
+                        break
+                max_valor = int(f.readline().strip())
+                dados = f.read()
+            pixels = [list(dados[i:i+3]) for i in range(0, len(dados), 3)]
+            return largura, altura, pixels
+
+        largura1, altura1, pixels1 = ler_ppm(nome_original)
+        largura2, altura2, pixels2 = ler_ppm(nome_processada)
+
+        if largura1 != largura2 or altura1 != altura2:
+            raise ValueError("As imagens devem ter o mesmo tamanho para comparar!")
+
+        # Calcula soma dos erros quadráticos
+        soma_erro = 0
+        for p1, p2 in zip(pixels1, pixels2):
+            for c1, c2 in zip(p1, p2):
+                soma_erro += (c1 - c2) ** 2
+
+        n = largura1 * altura1 * 3  # total de canais
+        rmse = math.sqrt(soma_erro / n)
+        print(f"RMSE entre as imagens: {rmse}")
+        return rmse
 
 
 imagem = ManipularImage("eu.jpg", "foto")
 imagem.reduzir_ppm("foto.ppm")
-imagem.aumentar_ppm("fotoreduzida.pmm")
-imagem.calcular_erro()
+imagem.aumentar_ppm("fotoreduzida.ppm")
+imagem.calcular_erro("foto.ppm", "fotoaumentado.ppm")

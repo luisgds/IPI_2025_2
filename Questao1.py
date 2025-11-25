@@ -167,4 +167,7 @@ class ManipularImage():
 imagem = ManipularImage("eu.jpg", "foto")
 imagem.reduzir_ppm("foto.ppm")
 imagem.aumentar_ppm("fotoreduzida.ppm")
-imagem.calcular_erro("foto.ppm", "fotoaumentado.ppm")
+imagem.calcular_erro("foto.ppm", "fotoaumentado.ppm") # Questão 1
+imagem.calcular_erro("foto.ppm", "foto_media_5x5.ppm") # Questão 2 5x5
+imagem.calcular_erro("foto.ppm", "foto_gauss_sigma_40.ppm") # Questão 2 gauss
+
